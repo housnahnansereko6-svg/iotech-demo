@@ -79,27 +79,30 @@ export function HeroSection() {
       {/* Text */}
       <div className="flex flex-col">
         <p className="flex items-center gap-3 text-xs font-medium tracking-[0.14em] text-[#8a3b2a] uppercase">
-          About Me
+          Authorial Focus
           <span aria-hidden="true" className="h-px w-16 bg-border" />
         </p>
 
         <h1 className="mt-4 font-serif text-4xl leading-[1.08] font-normal tracking-tight text-foreground sm:text-5xl">
-          Learning in public at the intersection of <em className="text-primary">cybersecurity</em>,
-          software development, and AI.
+          From <em className="text-primary">curiosity</em> to creation: my journey in computer science.
         </h1>
 
         <p className="mt-7 text-base leading-relaxed text-foreground/75">
-          I&rsquo;m a final-year student at Makerere University in Kampala, Uganda, with an interest
-          in everything development, cybersecurity and AI/ML. My journey into tech started in the
-          vacation after S6, when I took a certificate course in software development with Python,
-          and I have been building, breaking and learning ever since.
+          I&rsquo;m Housnah Nansereko, a Computer Science student at Makerere University, with
+          interests spanning software engineering, cybersecurity, data science and artificial
+          intelligence.
         </p>
 
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          I&rsquo;m currently part of the iotec Code Camp, an all-female code camp set up to discover
-          and grow female talent in tech. This blog is where I share what I learn along the way:
-          the projects I build, security concepts explained simply, experiments with machine
-          learning, and honest notes from the journey.
+          I&rsquo;m fascinated by how technology works beneath the surface how systems are
+          designed, how problems are solved, and how ideas become things people can actually use. My
+          interests have taken me through software development, data analytics and machine learning,
+          while continually drawing me towards new areas of computing.
+        </p>
+
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+          I&rsquo;m continually learning, experimenting and broadening my understanding of the field,
+          with the hope of contributing to meaningful technological solutions and ideas.
         </p>
 
         <div className="mt-10">
