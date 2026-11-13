@@ -1,12 +1,14 @@
 import { useState, type ReactNode } from 'react'
-import { Check, Copy, Mail, MessageSquareText, Phone, Share2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import authorPortrait from '../assets/author-potrait.png'
+import { Check, Copy, Mail, Phone } from 'lucide-react'
+import { LinkedinLogoIcon, WhatsappLogoIcon, XLogoIcon } from '@phosphor-icons/react'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import authorPortrait from '../assets/author-potrait1.png'
 
-// Edit these to change the author details shown in the hero.
+
 const AUTHOR = {
   name: 'Housnah Nansereko',
-  role: 'Systems Architect & Independent Essayist. Founder of The Tech Report',
+  role: 'Cybersecurity Enthusiast · Final-year Computer Science student, Makerere University',
   email: 'housnahnansereko6@gmail.com',
   phoneDisplay: '0763 634 264',
   phoneHref: 'tel:+256763634264',
@@ -21,9 +23,11 @@ const chipClass =
 function ContactChip({ href, icon, children }: { href: string; icon?: ReactNode; children: ReactNode }) {
   const external = href.startsWith('http')
   return (
+    // buttonVariants() gives a plain link the exact look of our <Button>,
+    // without turning it into a <button> (a link that goes somewhere should stay an <a>).
     <a
       href={href}
-      className={chipClass}
+      className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }), 'gap-2 px-4 font-normal')}
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
     >
       {icon}
@@ -41,7 +45,7 @@ export function HeroSection() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Clipboard can be unavailable (e.g. non-HTTPS); the mailto link still works.
+      
     }
   }
 
@@ -75,31 +79,32 @@ export function HeroSection() {
       {/* Text */}
       <div className="flex flex-col">
         <p className="flex items-center gap-3 text-xs font-medium tracking-[0.14em] text-[#8a3b2a] uppercase">
-          Authorial Focus
+          About Me
           <span aria-hidden="true" className="h-px w-16 bg-border" />
         </p>
 
         <h1 className="mt-4 font-serif text-4xl leading-[1.08] font-normal tracking-tight text-foreground sm:text-5xl">
-          Writing at the intersection of <em className="text-primary">quiet computing</em>,
-          spatial architecture, and enduring software.
+          Learning in public at the intersection of <em className="text-primary">cybersecurity</em>,
+          software development, and AI.
         </h1>
 
         <p className="mt-7 text-base leading-relaxed text-foreground/75">
-          Over the last fifteen years, I have drafted distributed fault-tolerant topologies by day
-          and examined the subtle erosion of cognitive silence by night. The Tech Report is an
-          archival venue for unhurried prose—deliberate investigations into digital ergonomics,
-          high-leverage simplicity, and technologies built to outlast market frenzy.
+          I&rsquo;m a final-year student at Makerere University in Kampala, Uganda, with an interest
+          in everything development, cybersecurity and AI/ML. My journey into tech started in the
+          vacation after S6, when I took a certificate course in software development with Python,
+          and I have been building, breaking and learning ever since.
         </p>
 
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Every piece published here undergoes iterative revisions, typographic tuning, and
-          empirical review. Supported solely through independent patronage and direct subscriber
-          micro-patronage. No algorithms, no ad tracking, no performative urgency.
+          I&rsquo;m currently part of the iotec Code Camp, an all-female code camp set up to discover
+          and grow female talent in tech. This blog is where I share what I learn along the way:
+          the projects I build, security concepts explained simply, experiments with machine
+          learning, and honest notes from the journey.
         </p>
 
         <div className="mt-10">
           <p className="text-xs font-medium tracking-[0.14em] text-foreground/70 uppercase">
-            Direct Inquiries &amp; Corroboration
+            Get in Touch
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -129,21 +134,23 @@ export function HeroSection() {
 
             <ContactChip
               href={AUTHOR.whatsappHref}
-              icon={<MessageSquareText aria-hidden="true" className="size-4 text-muted-foreground" />}
+              icon={<WhatsappLogoIcon aria-hidden="true" className="size-4 text-muted-foreground" />}
             >
               WhatsApp
             </ContactChip>
 
             <ContactChip
               href={AUTHOR.linkedinHref}
-              icon={<Share2 aria-hidden="true" className="size-4 text-muted-foreground" />}
+              icon={<LinkedinLogoIcon aria-hidden="true" className="size-4 text-muted-foreground" />}
             >
               LinkedIn
             </ContactChip>
 
-            <ContactChip href={`https://x.com/${AUTHOR.xHandle}`}>
-              <span className="font-medium">X</span>
-              <span className="ml-2">@{AUTHOR.xHandle}</span>
+            <ContactChip
+              href={`https://x.com/${AUTHOR.xHandle}`}
+              icon={<XLogoIcon aria-hidden="true" className="size-4 text-muted-foreground" />}
+            >
+              @{AUTHOR.xHandle}
             </ContactChip>
           </div>
         </div>
