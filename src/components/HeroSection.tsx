@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Check, Copy, Mail, Phone } from 'lucide-react'
-import { LinkedinLogoIcon, WhatsappLogoIcon, XLogoIcon } from '@phosphor-icons/react'
+import { LinkedinLogoIcon, WhatsappLogoIcon } from '@phosphor-icons/react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import authorPortrait from '../assets/author-potrait1.png'
@@ -8,13 +8,13 @@ import authorPortrait from '../assets/author-potrait1.png'
 
 const AUTHOR = {
   name: 'Housnah Nansereko',
-  role: 'Cybersecurity Enthusiast · Final-year Computer Science student, Makerere University',
+  role: 'Cybersecurity Enthusiast · Founder of the Tech Report',
   email: 'housnahnansereko6@gmail.com',
   phoneDisplay: '0763 634 264',
   phoneHref: 'tel:+256763634264',
   whatsappHref: 'https://wa.me/256763634264',
   linkedinHref: 'https://www.linkedin.com/in/housnah-nansereko-9379a630a',
-  xHandle: 'ssubbianne',
+  
 }
 
 const chipClass =
@@ -50,7 +50,10 @@ export function HeroSection() {
   }
 
   return (
-    <section className="grid items-start gap-10 py-12 md:py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
+    // The page content lives in a centred column, so bg-white alone stops at its edges.
+    // The shadow paints the same white far out to the left and right, and clip-path
+    // keeps it from also spilling above and below. Shadows never cause sideways scrolling.
+    <section className="grid items-start gap-10 bg-white shadow-[0_0_0_100vmax_white] [clip-path:inset(0_-100vmax)] py-12 md:py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
       {/* Portrait */}
       <figure className="flex flex-col">
         <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-sm">
@@ -149,12 +152,7 @@ export function HeroSection() {
               LinkedIn
             </ContactChip>
 
-            <ContactChip
-              href={`https://x.com/${AUTHOR.xHandle}`}
-              icon={<XLogoIcon aria-hidden="true" className="size-4 text-muted-foreground" />}
-            >
-              @{AUTHOR.xHandle}
-            </ContactChip>
+            
           </div>
         </div>
       </div>

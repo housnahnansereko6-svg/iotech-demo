@@ -8,14 +8,14 @@ import { BlogCard } from './BlogCard'
 
 const ALL = 'All'
 
-// Newest first. [...BLOG_POSTS] makes a copy so sort() doesn't change the original list.
+// make a copy so sort() doesn't change the original list.
 const SORTED_POSTS = [...BLOG_POSTS].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
 
-// Build the tab list from the posts themselves: 'All' + every category, without duplicates.
-// new Set(...) removes repeats, so two 'Essay' posts only make one 'Essay' tab.
+
+// all builds from every category wihtoyt duplicates and new set removes any duplicates if any
 const CATEGORIES = [ALL, ...new Set(SORTED_POSTS.map((post) => post.category))]
 
-// 1 -> '01', 4 -> '04'
+// 1 -> '01'
 const twoDigits = (n: number) => String(n).padStart(2, '0')
 
 export function RecentBlogs() {
@@ -33,7 +33,7 @@ export function RecentBlogs() {
       ? SORTED_POSTS
       : SORTED_POSTS.filter((post) => post.category === activeCategory)
 
-  // Whenever the carousel moves (or rebuilds), update the counter and the arrow buttons.
+  // Whenever the carousel moves-rebuilds, update the counter and the arrow buttons.
   useEffect(() => {
     if (!api) return
 
