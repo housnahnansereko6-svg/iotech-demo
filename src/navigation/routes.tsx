@@ -64,6 +64,7 @@ export function AppRouter() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
 
+  // pathname never includes the '?...' part, so '/blog?id=abc' matches '/blog' exactly.
   const matchedRoute = ROUTES.find((route) => route.path === pathname) ?? DEFAULT_ROUTE
 
   useEffect(() => {

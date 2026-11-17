@@ -11,6 +11,21 @@ export const PATHS = {
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS]
 
+// The address of ONE blog post: '/blog' with the post's id as a search param.
+// `${string}` means "any text can go here".
+export type BlogDetailsPath = `/blog?${string}`
+
+// Every address navigate() is allowed to go to: the fixed pages above + any blog post.
+export type NavigablePath = AppPath | BlogDetailsPath
+
+
+//   blogDetailsPath('why-cybersecurity-matters')  ->  '/blog?id=why-cybersecurity-matters'
+
+export function blogDetailsPath(id: string): BlogDetailsPath {
+  const params = new URLSearchParams({ id })
+  return `${PATHS.BLOG_DETAILS}?${params.toString()}`
+}
+
 export interface AdminNavItem {
   label: string
   path: AppPath

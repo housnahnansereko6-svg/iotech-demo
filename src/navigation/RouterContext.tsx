@@ -9,15 +9,16 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react'
-import { PATHS, type AppPath } from './paths'
+import { PATHS, type AppPath, type NavigablePath } from './paths'
 
 interface NavigateOptions {
   replace?: boolean
 }
 
 interface RouterContextValue {
-  pathname: string
-  navigate: (to: AppPath, options?: NavigateOptions) => void
+  pathname: string // the path, e.g. '/blog'
+  search: string // the search params part, e.g. '?id=why-cybersecurity-matters' ('' if none)
+  navigate: (to: NavigablePath, options?: NavigateOptions) => void
 }
 
 const RouterContext = createContext<RouterContextValue | null>(null)
@@ -27,34 +28,52 @@ function normalizePath(rawPath: string): string {
   return rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath
 }
 
+// Splits '/blog?id=abc' into { pathname: '/blog', search: '?id=abc' }.
+function splitAddress(address: string) {
+  const questionMark = address.indexOf('?')
+  if (questionMark === -1) return { pathname: normalizePath(address), search: '' }
+  return {
+    pathname: normalizePath(address.slice(0, questionMark)),
+    search: address.slice(questionMark),
+  }
+}
+
+// Reads the current address from the browser's address bar.
+function readBrowserLocation() {
+  if (typeof window === 'undefined') return { pathname: PATHS.LANDING as string, search: '' }
+  return { pathname: normalizePath(window.location.pathname), search: window.location.search }
+}
+
 export function RouterProvider({ children }: { children: ReactNode }) {
-  const [pathname, setPathname] = useState<string>(() =>
-    typeof window !== 'undefined' ? normalizePath(window.location.pathname) : PATHS.LANDING,
-  )
+  const [location, setLocation] = useState(readBrowserLocation)
 
   useEffect(() => {
-    const handlePopState = () => {
-      setPathname(normalizePath(window.location.pathname))
-    }
+    // Browser back/forward buttons: re-read the address bar.
+    const handlePopState = () => setLocation(readBrowserLocation())
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  const navigate = useCallback((to: AppPath, options?: NavigateOptions) => {
-    const normalizedTarget = normalizePath(to)
-    if (window.location.pathname !== normalizedTarget) {
+  const navigate = useCallback((to: NavigablePath, options?: NavigateOptions) => {
+    const target = splitAddress(to)
+    const fullTarget = target.pathname + target.search
+    const current = window.location.pathname + window.location.search
+    if (current !== fullTarget) {
       if (options?.replace) {
-        window.history.replaceState({}, '', normalizedTarget)
+        window.history.replaceState({}, '', fullTarget)
       } else {
-        window.history.pushState({}, '', normalizedTarget)
+        window.history.pushState({}, '', fullTarget)
       }
     }
-    setPathname(normalizedTarget)
+    setLocation(target)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
-  const value = useMemo(() => ({ pathname, navigate }), [pathname, navigate])
+  const value = useMemo(
+    () => ({ pathname: location.pathname, search: location.search, navigate }),
+    [location, navigate],
+  )
 
   return <RouterContext.Provider value={value}>{children}</RouterContext.Provider>
 }
@@ -64,7 +83,15 @@ export function useLocation() {
   if (!context) {
     throw new Error('useLocation must be used within a RouterProvider')
   }
-  return { pathname: context.pathname }
+  return { pathname: context.pathname, search: context.search }
+}
+
+// Gives you the search params of the current address, ready to read:
+//   address '/blog?id=abc'  ->  useSearchParams().get('id')  ->  'abc'
+export function useSearchParams() {
+  const { search } = useLocation()
+  // useMemo: only rebuild the object when the search text actually changes.
+  return useMemo(() => new URLSearchParams(search), [search])
 }
 
 export function useNavigate() {
@@ -76,7 +103,7 @@ export function useNavigate() {
 }
 
 export interface LinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
-  to: AppPath
+  to: NavigablePath
   replace?: boolean
 }
 
