@@ -1,24 +1,22 @@
 import { useEffect, useState } from 'react'
+import { useQuery } from 'convex/react'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { BLOG_POSTS } from '../data/blogs'
+import { api as convexApi } from '../../convex/_generated/api'
 import { BlogCard } from './BlogCard'
 
 const ALL = 'All'
-
-// make a copy so sort() doesn't change the original list.
-const SORTED_POSTS = [...BLOG_POSTS].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
-
-
-// all builds from every category wihtoyt duplicates and new set removes any duplicates if any
-const CATEGORIES = [ALL, ...new Set(SORTED_POSTS.map((post) => post.category))]
 
 // 1 -> '01'
 const twoDigits = (n: number) => String(n).padStart(2, '0')
 
 export function RecentBlogs() {
+  // Ask Convex for the posts (already sorted newest first by the server).
+  // It's `undefined` while loading, then the list. It also updates live when posts change.
+  const posts = useQuery(convexApi.blogs.list)
   const [activeCategory, setActiveCategory] = useState(ALL)
 
   // The carousel hands us its "api" object, which lets us move it and ask where it is.
@@ -28,12 +26,15 @@ export function RecentBlogs() {
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(false)
 
+  // ALL builds from every category; new Set removes duplicates.
+  const categories = [ALL, ...new Set((posts ?? []).map((post) => post.category))]
+
   const visiblePosts =
     activeCategory === ALL
-      ? SORTED_POSTS
-      : SORTED_POSTS.filter((post) => post.category === activeCategory)
+      ? (posts ?? [])
+      : (posts ?? []).filter((post) => post.category === activeCategory)
 
-  // Whenever the carousel moves-rebuilds, update the counter and the arrow buttons.
+  // Whenever the carousel movesrebuilds, update the counter and the arrow buttons.
   useEffect(() => {
     if (!api) return
 
@@ -53,7 +54,7 @@ export function RecentBlogs() {
       api.off('select', update)
       api.off('reInit', update)
     }
-  }, [api])
+  }, [api, posts])
 
   return (
     <section aria-labelledby="recent-blogs-heading" className="border-t border-border py-12 md:py-16">
@@ -80,7 +81,7 @@ export function RecentBlogs() {
             aria-label="Filter posts by category"
             className="flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-border bg-card p-0.5 shadow-xs"
           >
-            {CATEGORIES.map((category) => {
+            {categories.map((category) => {
               const isActive = category === activeCategory
               return (
                 <button
@@ -132,17 +133,28 @@ export function RecentBlogs() {
 
       {/* key={activeCategory} gives the carousel a fresh start (back to slide 1)
           every time you switch tabs. */}
+      {posts === undefined ? (
+        // Still loading: show three grey placeholder cards.
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-96 rounded-xl" />
+          ))}
+        </div>
+      ) : posts.length === 0 ? (
+        <p className="mt-8 text-sm text-muted-foreground">No posts yet. Check back soon.</p>
+      ) : (
       <Carousel key={activeCategory} setApi={setApi} opts={{ align: 'start' }} className="mt-8">
         <CarouselContent>
           {/* .map() turns each post into a slide. basis-* = how wide each slide is:
               1 per row on phones, 2 on tablets, 3 on big screens. */}
           {visiblePosts.map((post) => (
-            <CarouselItem key={post.id} className="py-1 md:basis-1/2 lg:basis-1/3">
+            <CarouselItem key={post._id} className="py-1 md:basis-1/2 lg:basis-1/3">
               <BlogCard post={post} />
             </CarouselItem>
           ))}
         </CarouselContent>
       </Carousel>
+      )}
     </section>
   )
 }

@@ -1,8 +1,8 @@
 import { ArrowRight, Clock } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import type { BlogPost } from '../data/blogs'
+import type { Doc } from '../../convex/_generated/dataModel'
 import { useNavigate } from '../navigation/RouterContext'
-import { PATHS } from '../navigation/paths'
+import { blogDetailsPath } from '../navigation/paths'
 
 // Turns '2026-10-28' into 'Oct 28, 2026'.
 function formatDate(isoDate: string) {
@@ -17,7 +17,9 @@ function formatDate(isoDate: string) {
 const formatUGX = (amount: number) => amount.toLocaleString('en-US')
 
 // A component receives data through "props". This one gets a single post.
-export function BlogCard({ post }: { post: BlogPost }) {
+// Doc<'blogs'> is the type of one post stored in our Convex `blogs` table.
+// Cards never get the article `body` (the list query leaves it out).
+export function BlogCard({ post }: { post: Omit<Doc<'blogs'>, 'body'> }) {
   const navigate = useNavigate()
   const isFree = post.price === 0
 
@@ -61,17 +63,17 @@ export function BlogCard({ post }: { post: BlogPost }) {
           <span>{post.readMinutes} min read</span>
         </p>
 
-        {/* CardTitle is only a styled <div>, so we put a real <h3> inside it
-            so screen readers see a proper heading. */}
+     
         <CardTitle className="font-serif text-xl leading-snug font-semibold tracking-tight">
           <h3>
-            {/* A real link, so it works with keyboard, middle-click and screen readers.
-                after:absolute after:inset-0 stretches the clickable area over the whole card. */}
+            {/*  */}
             <a
-              href={PATHS.BLOG_DETAILS}
+              href={blogDetailsPath(post.slug)}
               onClick={(event) => {
                 event.preventDefault()
-                navigate(PATHS.BLOG_DETAILS)
+                // Pass the post's id in the address
+               
+                navigate(blogDetailsPath(post.slug))
               }}
               className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
             >
@@ -81,8 +83,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
         </CardTitle>
       </CardHeader>
 
-      {/* flex-1 makes the excerpt take up the spare space, so every footer
-          sits at the bottom of its card. line-clamp-3 cuts long text at 3 lines with "…". */}
+ 
       <CardContent className="flex-1">
         <CardDescription className="line-clamp-3 leading-relaxed">{post.excerpt}</CardDescription>
       </CardContent>
