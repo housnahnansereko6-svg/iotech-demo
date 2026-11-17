@@ -1,6 +1,14 @@
 import { useState, type FormEvent } from 'react'
-import { AtSign, CheckCircle2, Lock, Smartphone, Zap } from 'lucide-react'
+import { AtSign, CheckCircle2, ChevronDown, Lock, Smartphone, Zap } from 'lucide-react'
+import type { CountryCode } from 'libphonenumber-js'
 import { Button } from '@/components/ui/button'
+import {
+  COUNTRY_OPTIONS,
+  DEFAULT_COUNTRY,
+  PAYMENT_COUNTRIES,
+  countryLabel,
+  parseMobileNumber,
+} from '@/lib/phone'
 import { cn } from '@/lib/utils'
 
 // The two mobile money networks a reader can pay with.
@@ -14,10 +22,8 @@ const NETWORKS: { id: Network; label: string; dot: string }[] = [
   { id: 'airtel', label: 'Airtel Money', dot: 'bg-red-500' },
 ]
 
-// Very small checks. They catch typos, not every possible bad value.
+// A small check. It catches typos, not every possible bad email.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-// Ugandan mobile numbers: 9 digits after +256, or 10 digits starting with 0.
-const PHONE_PATTERN = /^(0\d{9}|\d{9})$/
 
 interface PaywallProps {
   price: number // in UGX
@@ -28,6 +34,7 @@ export function Paywall({ price }: PaywallProps) {
   const [network, setNetwork] = useState<Network>('mtn')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [country, setCountry] = useState<CountryCode>(DEFAULT_COUNTRY)
   const [error, setError] = useState<string | null>(null)
   // After a successful submit we swap the form for a "check your phone" message.
   const [submitted, setSubmitted] = useState(false)
@@ -50,9 +57,16 @@ export function Paywall({ price }: PaywallProps) {
     }
 
     if (mode === 'new') {
-      const digits = phone.replace(/\s/g, '')
-      if (!PHONE_PATTERN.test(digits)) {
-        setError('Please enter a valid mobile money number, e.g. 0772 123 456.')
+      // libphonenumber-js knows each country's real numbering rules (see src/lib/phone.ts).
+      // fullNumber is e.g. '+256772123456', the format we'll send to the payment API.
+      const fullNumber = parseMobileNumber(phone, country)
+      if (fullNumber === null) {
+        setError('Please enter a valid mobile number, e.g. 0772 123 456.')
+        return
+      }
+      // The number is real, but our payment provider can't charge it yet.
+      if (!PAYMENT_COUNTRIES.includes(country)) {
+        setError('Mobile Money payments currently support Ugandan (+256) numbers only.')
         return
       }
     }
@@ -165,9 +179,30 @@ export function Paywall({ price }: PaywallProps) {
                   Mobile Money Phone Number
                 </label>
                 <div className={cn(fieldClass, 'mt-1.5 px-0')}>
-                  <span className="flex h-full shrink-0 items-center border-r border-input px-3 text-xs font-medium whitespace-nowrap text-foreground">
-                    +256 (UG)
-                  </span>
+                  {/* Country code dropdown. A native <select> works with keyboards and
+                      screen readers, and opens the phone's own picker on mobile. */}
+                  {/* The visible part is the short '+256 (UG)' label. The real <select> sits
+                      invisibly on top of it, so clicking opens the full list of countries
+                      ('Uganda (+256)', 'Kenya (+254)', ...) without making the field wide. */}
+                  <div className="relative flex h-full shrink-0 items-center gap-1 border-r border-input pr-2 pl-3 text-xs font-medium whitespace-nowrap text-foreground focus-within:bg-secondary">
+                    {countryLabel(country)}
+                    <ChevronDown aria-hidden="true" className="size-3.5 text-muted-foreground" />
+                    <select
+                      aria-label="Country code"
+                      value={country}
+                      onChange={(e) => {
+                        setCountry(e.target.value as CountryCode)
+                        setError(null)
+                      }}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                    >
+                      {COUNTRY_OPTIONS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.name} ({c.dialCode})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <Smartphone aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
                   <input
                     id="paywall-phone"
