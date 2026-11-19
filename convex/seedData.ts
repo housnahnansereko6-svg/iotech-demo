@@ -3,24 +3,77 @@ import schema from "./schema";
 
 type NewBlog = Infer<typeof schema.tables.blogs.validator>;
 
-// How the article `body` is written:
+// The sample posts are written in a simple text format, which is easier to edit here
+// than HTML. toBlog() below turns each one into a full `blogs` document.
 //   - blocks are separated by a blank line
 //   - a block starting with "## " is a heading
 //   - a block starting with "> " is a pull quote
 //   - anything else is a normal paragraph
+type SamplePost = {
+  slug: string;
+  title: string;
+  subtitle: string;
+  excerpt: string;
+  category: NewBlog["category"];
+  publishedAt: string; // ISO date, e.g. '2026-10-28'
+  image: string; // public path of the cover photo
+  imageAlt: string;
+  price: number; // in UGX. 0 means the post is free
+  body: string;
+};
 
-// The first posts we load into the database with `npx convex run blogs:seed`.
-// After this, new posts will be created from the admin dashboard.
-export const SAMPLE_BLOGS: NewBlog[] = [
+// How many blocks (paragraphs/headings) of a paid post anyone can read before paying.
+const PREVIEW_BLOCKS = 2;
+// Average adult reading speed, used for the "N min read" label.
+const WORDS_PER_MINUTE = 200;
+
+function escapeHtml(text: string) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function blockToHtml(block: string) {
+  if (block.startsWith("## ")) return `<h2>${escapeHtml(block.slice(3))}</h2>`;
+  if (block.startsWith("> ")) return `<blockquote>${escapeHtml(block.slice(2))}</blockquote>`;
+  return `<p>${escapeHtml(block)}</p>`;
+}
+
+function toBlog(post: SamplePost): NewBlog {
+  const blocks = post.body
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter((block) => block.length > 0);
+  const wordCount = post.body.split(/\s+/).filter(Boolean).length;
+  const isFree = post.price === 0;
+  return {
+    slug: post.slug,
+    title: post.title,
+    subtitle: post.subtitle,
+    excerpt: post.excerpt,
+    previewContentHtml: blocks.slice(0, PREVIEW_BLOCKS).map(blockToHtml).join("\n"),
+    fullContentHtml: blocks.map(blockToHtml).join("\n"),
+    category: post.category,
+    readTime: `${Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE))} min read`,
+    wordCount,
+    status: "published",
+    subscriptionMode: isFree ? "free" : "paid",
+    price: { amount: post.price, currency: "UGX" },
+    coverImageUrl: post.image,
+    coverImageData: { alt: post.imageAlt, caption: "" },
+    updatedAt: Date.parse(post.publishedAt),
+  };
+}
+
+const SAMPLE_POSTS: SamplePost[] = [
   {
     slug: 'why-cybersecurity-matters',
     title: 'Why Cybersecurity Matters More Than Ever',
+    subtitle: 'Security is now part of everyday digital life',
     excerpt:
       'From mobile money to school portals, more of our lives run online every year. Here is why security is everyone’s job, not just the IT department’s.',
     category: 'Cybersecurity',
     publishedAt: '2026-11-10',
-    readMinutes: 4,
     image: '/cybersecurity.png',
+    imageAlt: 'A padlock over a phone showing a mobile money app',
     price: 0,
     body: `Ten years ago, most of what mattered in a typical Ugandan household lived on paper: land titles in a drawer, school reports in a folder, savings in a bank passbook or under the mattress. Today, much of it lives on a phone. Our money moves through mobile wallets, our children’s results arrive through school portals, and our conversations with family, customers and colleagues run through messaging apps. That shift has made life faster and cheaper. It has also moved a lot of value into places that criminals can reach from anywhere in the world.
 
@@ -71,12 +124,13 @@ Cybersecurity is no longer a specialist topic. It is part of basic digital liter
   {
     slug: 'growing-privacy-concern',
     title: 'The Growing Concern of Privacy in a Connected World',
+    subtitle: 'Who sees your data, and what they do with it',
     excerpt:
       'Apps know where we go, what we buy and who we talk to. A look at how our data is collected, why it matters, and simple steps to take back control.',
     category: 'Privacy',
     publishedAt: '2026-10-28',
-    readMinutes: 4,
     image: '/privacy.png',
+    imageAlt: 'A person holding a phone surrounded by data icons',
     price: 0,
     body: `Open the settings on your phone and look at the list of apps that can see your location. For most people it is longer than expected. A torch app, a game, a shopping app you used once: each may be quietly recording where you are, how long you stay, and where you go next. Multiply that by contacts, photos, microphone access and browsing history, and a detailed picture of your life is being assembled without you ever writing it down.
 
@@ -127,12 +181,13 @@ A connected world does not have to be a world without privacy. It will be what w
   {
     slug: 'ai-and-automation',
     title: 'AI and Automation: What Changes and What Stays Human',
+    subtitle: 'Where machines help, and where people still matter',
     excerpt:
       'AI tools can now write code, sort emails and answer customers. What that means for jobs, for learning, and for the skills worth building today.',
     category: 'AI & Automation',
     publishedAt: '2026-10-14',
-    readMinutes: 4,
     image: '/ai-automation.png',
+    imageAlt: 'A robotic arm next to a person working at a laptop',
     price: 800,
     body: `A few years ago, asking a computer to write a cover letter, summarise a long report or fix a bug in your code would have sounded like science fiction. Today it takes seconds. AI assistants draft emails, translate between languages, answer customer questions and generate working software from a plain-English description. For anyone studying or working in technology, the obvious question follows: if machines can do this, what is left for us?
 
@@ -179,12 +234,13 @@ AI will keep improving. The people who thrive will be the ones who stay curious,
   {
     slug: 'securing-ai-systems',
     title: 'AI Security: How to Protect the Systems That Think',
+    subtitle: 'Prompt injection, data leaks and how to defend against them',
     excerpt:
       'Prompt injection, data poisoning and leaked training data are new kinds of attacks. A beginner’s guide to how AI systems get attacked and how to defend them.',
     category: 'AI Security',
     publishedAt: '2026-09-30',
-    readMinutes: 4,
     image: '/ai-security.png',
+    imageAlt: 'A shield in front of a neural network diagram',
     price: 1000,
     body: `Companies are rushing to add AI to everything: chatbots that answer customers, assistants that read emails and book meetings, tools that summarise documents and write code. Each of these systems takes in text from the outside world and decides what to do with it. That makes them powerful, and it also makes them a new kind of target. Traditional security still matters, but AI systems bring attacks that most developers have never had to think about.
 
@@ -229,3 +285,7 @@ Before you ship an AI feature, ask a few questions. What can this system do, and
 AI security is a young field, and the attacks will keep evolving. But the core idea is old and reliable: never trust input, give every component the least power it needs, and check every important decision on the server. Build with that mindset, and the systems that think can also be systems we trust.`,
   },
 ]
+
+// The first posts we load into the database with `npx convex run blogs:seed`.
+// After this, new posts will be created from the admin dashboard.
+export const SAMPLE_BLOGS: NewBlog[] = SAMPLE_POSTS.map(toBlog);
