@@ -26,10 +26,11 @@ const NETWORKS: { id: Network; label: string; dot: string }[] = [
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface PaywallProps {
-  price: number // in UGX
+  price: number
+  currency: string // e.g. 'UGX'
 }
 
-export function Paywall({ price }: PaywallProps) {
+export function Paywall({ price, currency }: PaywallProps) {
   const [mode, setMode] = useState<Mode>('new')
   const [network, setNetwork] = useState<Network>('mtn')
   const [email, setEmail] = useState('')
@@ -39,7 +40,7 @@ export function Paywall({ price }: PaywallProps) {
   // After a successful submit we swap the form for a "check your phone" message.
   const [submitted, setSubmitted] = useState(false)
 
-  const formattedPrice = `UGX ${price.toLocaleString('en-US')}`
+  const formattedPrice = `${currency} ${price.toLocaleString('en-US')}`
 
   function switchMode(next: Mode) {
     setMode(next)

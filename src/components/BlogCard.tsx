@@ -1,12 +1,13 @@
 import { ArrowRight, Clock } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Doc } from '../../convex/_generated/dataModel'
+import type { FunctionReturnType } from 'convex/server'
+import type { api } from '../../convex/_generated/api'
 import { useNavigate } from '../navigation/RouterContext'
 import { blogDetailsPath } from '../navigation/paths'
 
-// Turns '2026-10-28' into 'Oct 28, 2026'.
-function formatDate(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString('en-US', {
+// Turns a timestamp into 'Oct 28, 2026'.
+function formatDate(timestamp: number) {
+  return new Date(timestamp).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -14,14 +15,16 @@ function formatDate(isoDate: string) {
 }
 
 // Turns 10000 into '10,000'.
-const formatUGX = (amount: number) => amount.toLocaleString('en-US')
+const formatAmount = (amount: number) => amount.toLocaleString('en-US')
+
+// One item of what `api.blogs.list` returns: a post without its article HTML.
+export type BlogCardPost = FunctionReturnType<typeof api.blogs.list>[number]
 
 // A component receives data through "props". This one gets a single post.
-// Doc<'blogs'> is the type of one post stored in our Convex `blogs` table.
-// Cards never get the article `body` (the list query leaves it out).
-export function BlogCard({ post }: { post: Omit<Doc<'blogs'>, 'body'> }) {
+// Cards never get the article HTML (the list query leaves it out).
+export function BlogCard({ post }: { post: BlogCardPost }) {
   const navigate = useNavigate()
-  const isFree = post.price === 0
+  const isFree = post.subscriptionMode === 'free'
 
   return (
     // relative -> lets the title link stretch over the whole card
@@ -32,8 +35,8 @@ export function BlogCard({ post }: { post: Omit<Doc<'blogs'>, 'body'> }) {
           object-cover crops it to fill the box without stretching. */}
       <div className="overflow-hidden">
         <img
-          src={post.image}
-          alt=""
+          src={post.coverImageUrl ?? undefined}
+          alt={post.coverImageData.alt}
           loading="lazy"
           className="aspect-[16/10] w-full bg-muted object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -51,16 +54,16 @@ export function BlogCard({ post }: { post: Omit<Doc<'blogs'>, 'body'> }) {
             </span>
           ) : (
             <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-              Paid · UGX {formatUGX(post.price)}
+              Paid · {post.price.currency} {formatAmount(post.price.amount)}
             </span>
           )}
         </div>
 
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock aria-hidden="true" className="size-3.5" />
-          <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+          <time dateTime={new Date(post.updatedAt).toISOString()}>{formatDate(post.updatedAt)}</time>
           <span aria-hidden="true">·</span>
-          <span>{post.readMinutes} min read</span>
+          <span>{post.readTime}</span>
         </p>
 
      
