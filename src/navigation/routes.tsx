@@ -4,6 +4,7 @@ import { AdminLayout } from '../layouts/AdminLayout'
 import { LandingPage } from '../pages/LandingPage'
 import { BlogDetailsPage } from '../pages/BlogDetailsPage'
 import { AdminBlogsPage } from '../pages/admin/AdminBlogsPage'
+import { CreateBlogPage } from '../pages/admin/CreateBlogPage'
 import { AdminTransactionsPage } from '../pages/admin/AdminTransactionsPage'
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage'
 import { useLocation, useNavigate } from './RouterContext'
@@ -43,6 +44,12 @@ export const ROUTES: readonly RouteConfig[] = [
     title: 'Articles & Essays | Admin Dashboard — The Tech Report',
     layout: 'admin',
     component: AdminBlogsPage,
+  },
+  {
+    path: PATHS.ADMIN_BLOG_CREATE,
+    title: 'Create New Blog | Admin Dashboard — The Tech Report',
+    layout: 'admin',
+    component: CreateBlogPage,
   },
   {
     path: PATHS.ADMIN_TRANSACTIONS,
