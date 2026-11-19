@@ -8,9 +8,9 @@ import { api } from '../../convex/_generated/api'
 import { useNavigate, useSearchParams } from '../navigation/RouterContext'
 import { PATHS } from '../navigation/paths'
 
-// Turns '2026-10-28' into 'Oct 28, 2026'.
-function formatDate(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString('en-US', {
+// Turns a timestamp into 'Oct 28, 2026'.
+function formatDate(timestamp: number) {
+  return new Date(timestamp).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -76,7 +76,7 @@ export function BlogDetailsPage() {
   }
 
   // STEP 4: the post was found, so show it.
-  const isFree = post.price === 0
+  const isFree = post.subscriptionMode === 'free'
 
   return (
     <article className="mx-auto w-full max-w-3xl py-12">
@@ -92,13 +92,15 @@ export function BlogDetailsPage() {
                 : 'rounded-full bg-amber-50 px-2.5 py-0.5 font-medium text-amber-700'
             }
           >
-            {isFree ? 'Free' : `Paid · UGX ${post.price.toLocaleString('en-US')}`}
+            {isFree
+              ? 'Free'
+              : `Paid · ${post.price.currency} ${post.price.amount.toLocaleString('en-US')}`}
           </span>
           <span className="ml-1 inline-flex items-center gap-1.5">
             <Clock aria-hidden="true" className="size-3.5" />
-            <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+            <time dateTime={new Date(post.updatedAt).toISOString()}>{formatDate(post.updatedAt)}</time>
             <span aria-hidden="true">·</span>
-            {post.readMinutes} min read
+            {post.readTime}
           </span>
         </div>
 
@@ -106,30 +108,39 @@ export function BlogDetailsPage() {
           {post.title}
         </h1>
 
-        <p className="mt-5 text-lg leading-relaxed text-foreground/75">{post.excerpt}</p>
+        <p className="mt-5 text-lg leading-relaxed text-foreground/75">{post.subtitle}</p>
       </header>
 
-      <img
-        src={post.image}
-        alt=""
-        className="mt-10 aspect-[16/9] w-full rounded-xl border border-border bg-muted object-cover"
-      />
+      {post.coverImageUrl && (
+        <figure className="mt-10">
+          <img
+            src={post.coverImageUrl}
+            alt={post.coverImageData.alt}
+            className="aspect-[16/9] w-full rounded-xl border border-border bg-muted object-cover"
+          />
+          {post.coverImageData.caption && (
+            <figcaption className="mt-2 text-center text-xs text-muted-foreground">
+              {post.coverImageData.caption}
+            </figcaption>
+          )}
+        </figure>
+      )}
 
       {post.locked ? (
-        // Paid post: the server only sent the opening paragraphs.
+        // Paid post: the server only sent the preview (previewContentHtml).
         // They fade out, and the paywall sits on top.
         <div className="relative mt-10">
           <div className="pointer-events-none select-none [mask-image:linear-gradient(to_bottom,black_35%,transparent_95%)]">
-            <ArticleBody body={post.body} />
+            <ArticleBody html={post.contentHtml} />
           </div>
           <div className="relative -mt-16 pb-4">
-            <Paywall price={post.price} />
+            <Paywall price={post.price.amount} currency={post.price.currency} />
           </div>
         </div>
       ) : (
         // Free post: the whole article.
         <div className="mt-10">
-          <ArticleBody body={post.body} />
+          <ArticleBody html={post.contentHtml} />
         </div>
       )}
     </article>

@@ -1,7 +1,11 @@
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useNavigate } from '../../navigation/RouterContext'
+import { PATHS } from '../../navigation/paths'
 
 export function AdminBlogsPage() {
+  const navigate = useNavigate()
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -10,6 +14,7 @@ export function AdminBlogsPage() {
         </h1>
         <Button
           type="button"
+          onClick={() => navigate(PATHS.ADMIN_BLOG_CREATE)}
           className="self-start px-4 py-2 text-xs font-medium shadow-2xs sm:self-auto"
         >
           <Plus aria-hidden="true" className="size-3.5" />
