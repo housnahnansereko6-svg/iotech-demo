@@ -16,8 +16,12 @@ export const BLOG_CURRENCY = 'UGX'
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 const MAX_COVER_BYTES = 5 * 1024 * 1024 // 5 MB
-const MIN_BODY_WORDS = 50
-const MIN_PAID_PRICE = 500
+export const MIN_BODY_WORDS = 50
+export const MIN_PAID_PRICE = 500
+export const PRICE_PRESETS = [2500, 5000, 10000]
+export const TITLE_MAX = 100
+export const SUBTITLE_MAX = 250
+export const EXCERPT_MAX = 300
 const MAX_TAGS = 8
 
 // 'Why Cybersecurity Matters!' -> 'why-cybersecurity-matters'
@@ -49,47 +53,22 @@ export interface BlogBodyValue {
 
 // Every field of the Create Blog form, and the rule it has to pass.
 // Text inputs hold strings, so price is a string here and turned into a number below.
+// Fields are listed in the order they appear on the page, so the first error found
+// is also the first one on screen (the form moves the cursor there).
+// The publish/draft choice isn't a field: the two header buttons decide it.
 export const createBlogFormSchema = z
   .object({
+    category: z.enum(BLOG_CATEGORIES, { error: 'Choose a category.' }),
     title: z
       .string()
       .trim()
       .min(5, 'The title must be at least 5 characters.')
-      .max(120, 'Keep the title under 120 characters.'),
+      .max(TITLE_MAX, `Keep the title under ${TITLE_MAX} characters.`),
     subtitle: z
       .string()
       .trim()
       .min(5, 'The subtitle must be at least 5 characters.')
-      .max(160, 'Keep the subtitle under 160 characters.'),
-    slug: z
-      .string()
-      .trim()
-      .min(3, 'The slug must be at least 3 characters.')
-      .max(80, 'Keep the slug under 80 characters.')
-      .regex(SLUG_PATTERN, 'Use lowercase letters, numbers and single dashes only, e.g. my-first-post.'),
-    excerpt: z
-      .string()
-      .trim()
-      .min(20, 'The excerpt must be at least 20 characters.')
-      .max(300, 'Keep the excerpt under 300 characters so it fits on the card.'),
-    category: z.enum(BLOG_CATEGORIES, { error: 'Choose a category.' }),
-    tags: z
-      .string()
-      .refine((text) => parseTags(text).length <= MAX_TAGS, `Use at most ${MAX_TAGS} tags.`)
-      .refine(
-        (text) => parseTags(text).every((tag) => tag.length <= 30),
-        'Each tag must be 30 characters or fewer.',
-      ),
-    status: z.enum(['draft', 'published']),
-    subscriptionMode: z.enum(['free', 'paid']),
-    price: z.string().trim(),
-    body: z.object({
-      html: z.string(),
-      previewHtml: z.string(),
-      wordCount: z
-        .number()
-        .min(MIN_BODY_WORDS, `Write at least ${MIN_BODY_WORDS} words before saving.`),
-    }),
+      .max(SUBTITLE_MAX, `Keep the subtitle under ${SUBTITLE_MAX} characters.`),
     coverImage: z
       .instanceof(File, { error: 'Choose a cover image.' })
       .refine((file) => file.type.startsWith('image/'), 'The cover must be an image (PNG, JPG, WebP…).')
@@ -100,6 +79,33 @@ export const createBlogFormSchema = z
       .min(5, 'Describe the image in at least 5 characters (for screen readers).')
       .max(150, 'Keep the description under 150 characters.'),
     coverCaption: z.string().trim().max(200, 'Keep the caption under 200 characters.'),
+    body: z.object({
+      html: z.string(),
+      previewHtml: z.string(),
+      wordCount: z
+        .number()
+        .min(MIN_BODY_WORDS, `Write at least ${MIN_BODY_WORDS} words before saving.`),
+    }),
+    slug: z
+      .string()
+      .trim()
+      .min(3, 'The slug must be at least 3 characters.')
+      .max(80, 'Keep the slug under 80 characters.')
+      .regex(SLUG_PATTERN, 'Use lowercase letters, numbers and single dashes only, e.g. my-first-post.'),
+    excerpt: z
+      .string()
+      .trim()
+      .min(20, 'The excerpt must be at least 20 characters.')
+      .max(EXCERPT_MAX, `Keep the excerpt under ${EXCERPT_MAX} characters so it fits on the card.`),
+    tags: z
+      .string()
+      .refine((text) => parseTags(text).length <= MAX_TAGS, `Use at most ${MAX_TAGS} tags.`)
+      .refine(
+        (text) => parseTags(text).every((tag) => tag.length <= 30),
+        'Each tag must be 30 characters or fewer.',
+      ),
+    subscriptionMode: z.enum(['free', 'paid']),
+    price: z.string().trim(),
   })
   // Rules that need two fields at once: a paid post needs a real price.
   .superRefine((values, ctx) => {
@@ -122,7 +128,6 @@ export interface CreateBlogFormValues {
   excerpt: string
   category: string
   tags: string
-  status: 'draft' | 'published'
   subscriptionMode: 'free' | 'paid'
   price: string
   body: BlogBodyValue
@@ -143,7 +148,6 @@ export const EMPTY_CREATE_BLOG_FORM: CreateBlogFormValues = {
   excerpt: '',
   category: '',
   tags: '',
-  status: 'published',
   subscriptionMode: 'free',
   price: '',
   body: { html: '', previewHtml: '', wordCount: 0 },

@@ -5,6 +5,8 @@ import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
 import { Fragment, type Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { useEditor } from '@tiptap/react'
+import { Maximize2, Minimize2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import StarterKit from '@tiptap/starter-kit'
 import { Link, RichTextEditor } from '@/components/editor'
 import '@/components/editor/style.css'
@@ -59,7 +61,10 @@ export function BlogBodyEditor({ id, onChange, onBlur, invalid, describedBy }: B
       Link,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Placeholder.configure({ placeholder: 'Start writing your post…' }),
+      Placeholder.configure({
+        placeholder:
+          'Begin drafting the article here. Use headings, quotes, code blocks and lists to structure it…',
+      }),
       CharacterCount, // powers the word count in the footer
     ],
     editorProps: {
@@ -70,53 +75,81 @@ export function BlogBodyEditor({ id, onChange, onBlur, invalid, describedBy }: B
         'aria-multiline': 'true',
         'aria-invalid': invalid ? 'true' : 'false',
         ...(describedBy ? { 'aria-describedby': describedBy } : {}),
-        class: 'min-h-80 px-4 py-3 outline-none',
+        class: 'min-h-80 px-6 py-5 text-[0.95rem] leading-relaxed outline-none sm:px-10 sm:py-8',
       },
     },
     onUpdate: ({ editor }) => onChange(readBody(editor)),
     onBlur: () => onBlur?.(),
   })
 
+  // Zen mode: the editor fills the whole screen so nothing else distracts. Esc leaves it.
+  const [zen, setZen] = useState(false)
+  useEffect(() => {
+    if (!zen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setZen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [zen])
+
   return (
-    <RichTextEditor
-      editor={editor}
-      className={cn(invalid && 'border-destructive ring-3 ring-destructive/20')}
-    >
-      <RichTextEditor.Toolbar sticky>
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.Undo />
-          <RichTextEditor.Redo />
-        </RichTextEditor.ControlsGroup>
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.H2 />
-          <RichTextEditor.H3 />
-        </RichTextEditor.ControlsGroup>
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.Bold />
-          <RichTextEditor.Italic />
-          <RichTextEditor.Underline />
-          <RichTextEditor.Strikethrough />
-          <RichTextEditor.Highlight />
-          <RichTextEditor.ClearFormatting />
-        </RichTextEditor.ControlsGroup>
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.Blockquote />
-          <RichTextEditor.BulletList />
-          <RichTextEditor.OrderedList />
-          <RichTextEditor.Hr />
-        </RichTextEditor.ControlsGroup>
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.Link />
-          <RichTextEditor.Unlink />
-        </RichTextEditor.ControlsGroup>
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.AlignLeft />
-          <RichTextEditor.AlignCenter />
-          <RichTextEditor.AlignRight />
-        </RichTextEditor.ControlsGroup>
-      </RichTextEditor.Toolbar>
-      <RichTextEditor.Content />
-      <RichTextEditor.Footer showWordCount />
-    </RichTextEditor>
+    <div className={cn(zen && 'fixed inset-0 z-50 overflow-y-auto bg-background p-4 sm:p-8')}>
+      <div className={cn(zen && 'mx-auto max-w-3xl')}>
+        <RichTextEditor
+          editor={editor}
+          className={cn(
+            'rounded-xl bg-background',
+            invalid && 'border-destructive ring-3 ring-destructive/20',
+            zen && 'min-h-[calc(100dvh-4rem)]',
+          )}
+        >
+          <RichTextEditor.Toolbar sticky className="flex-wrap justify-center">
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Bold />
+              <RichTextEditor.Italic />
+              <RichTextEditor.Underline />
+              <RichTextEditor.Strikethrough />
+              <RichTextEditor.Highlight />
+            </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.H2 />
+              <RichTextEditor.H3 />
+            </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Blockquote />
+              <RichTextEditor.Code />
+              <RichTextEditor.CodeBlock />
+            </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.BulletList />
+              <RichTextEditor.OrderedList />
+              <RichTextEditor.Link />
+            </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Undo />
+              <RichTextEditor.Redo />
+            </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Control
+                active={zen}
+                aria-label={zen ? 'Leave Zen mode' : 'Zen mode: write full screen'}
+                title={zen ? 'Leave Zen mode (Esc)' : 'Zen mode: write full screen'}
+                onClick={() => setZen((on) => !on)}
+                className="w-auto gap-1 px-2 text-xs"
+              >
+                {zen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+                Zen
+              </RichTextEditor.Control>
+            </RichTextEditor.ControlsGroup>
+          </RichTextEditor.Toolbar>
+          <RichTextEditor.Content />
+        </RichTextEditor>
+      </div>
+    </div>
   )
 }
