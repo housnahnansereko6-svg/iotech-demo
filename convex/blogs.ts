@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
-import schema from "./schema";
+import schema, { blogStatusValidator } from "./schema";
 import { SAMPLE_BLOGS } from "./seedData";
 
 // The cover can be an uploaded file (coverImageStorageId) or a plain URL (coverImageUrl).
@@ -160,5 +160,51 @@ export const create = mutation({
       updatedAt: Date.now(),
     });
     return { slug: args.slug };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Managing posts (Admin Portal -> Blogs). Same SECURITY TODO as above: no login yet.
+// ---------------------------------------------------------------------------
+
+// Every post whatever its status, most recently changed first. Like `list`, it leaves
+// out the article HTML, which the table doesn't need.
+export const listForAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    const blogs = await ctx.db.query("blogs").withIndex("by_updatedAt").order("desc").take(200);
+    return await Promise.all(
+      blogs.map(
+        async ({ fullContentHtml: _full, previewContentHtml: _preview, ...row }) => ({
+          ...row,
+          coverImageUrl: await coverUrl(ctx, row),
+        }),
+      ),
+    );
+  },
+});
+
+// Publish, unpublish (back to draft) or archive a post.
+export const setStatus = mutation({
+  args: { id: v.id("blogs"), status: blogStatusValidator },
+  handler: async (ctx, args) => {
+    const blog = await ctx.db.get("blogs", args.id);
+    if (blog === null) throw new ConvexError("That post no longer exists.");
+    await ctx.db.patch("blogs", args.id, { status: args.status, updatedAt: Date.now() });
+    return null;
+  },
+});
+
+// Deletes a post for good, together with its uploaded cover image.
+export const remove = mutation({
+  args: { id: v.id("blogs") },
+  handler: async (ctx, args) => {
+    const blog = await ctx.db.get("blogs", args.id);
+    if (blog === null) return null; // already gone
+    if (blog.coverImageStorageId) {
+      await ctx.storage.delete(blog.coverImageStorageId);
+    }
+    await ctx.db.delete("blogs", args.id);
+    return null;
   },
 });

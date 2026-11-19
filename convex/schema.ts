@@ -68,5 +68,7 @@ export default defineSchema({
         // Find one post by its slug (Blog Details page).
         .index("by_slug", ["slug"])
         // Published posts, newest first (Landing page).
-        .index("by_status_and_updatedAt", ["status", "updatedAt"]),
+        .index("by_status_and_updatedAt", ["status", "updatedAt"])
+        // Every post, newest first (Admin Portal -> Blogs).
+        .index("by_updatedAt", ["updatedAt"]),
 });
